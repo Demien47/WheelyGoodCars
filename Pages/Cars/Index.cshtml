@@ -1,0 +1,33 @@
+﻿@@page
+@model WheelyGoodCars.Pages.Cars.IndexModel
+
+<h2>Mijn Auto's</h2>
+
+<a asp-page="Create">Nieuwe auto</a>
+
+<table class="table mt-3">
+    <thead>
+        <tr>
+            <th>Kenteken</th>
+            <th>Merk</th>
+            <th>Model</th>
+            <th>Prijs</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var car in Model.Cars)
+        {
+            <tr>
+                <td>@car.LicensePlate</td>
+                <td>@car.Brand</td>
+                <td>@car.Model</td>
+                <td>€ @car.Price</td>
+                <td>
+                    @(car.IsSold ? "Verkocht" : "Te koop")
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

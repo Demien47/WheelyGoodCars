@@ -1,11 +1,11 @@
 ﻿@page
 @model WheelyGoodCars.Pages.Cars.IndexModel
 
-<h2>Mijn Auto's</h2>
+<h1>Mijn Auto's</h1>
 
-<a asp-page="Create">Nieuwe auto</a>
+<a asp-page="Create" class="btn btn-primary mb-3">Nieuwe auto</a>
 
-<table class="table mt-3">
+<table class="table table-bordered">
     <thead>
         <tr>
             <th>Kenteken</th>
@@ -13,9 +13,9 @@
             <th>Model</th>
             <th>Prijs</th>
             <th>Status</th>
+            <th>Acties</th>
         </tr>
     </thead>
-
     <tbody>
         @foreach (var car in Model.Cars)
         {
@@ -24,8 +24,11 @@
                 <td>@car.Brand</td>
                 <td>@car.Model</td>
                 <td>€ @car.Price</td>
+                <td>@(car.IsSold ? "Verkocht" : "Te koop")</td>
                 <td>
-                    @(car.IsSold ? "Verkocht" : "Te koop")
+                    <form method="post" asp-page-handler="Delete" asp-route-id="@car.Id">
+                        <button type="submit" class="btn btn-danger btn-sm">Verwijderen</button>
+                    </form>
                 </td>
             </tr>
         }

@@ -15,21 +15,18 @@ namespace WheelyGoodCars.Pages.Cars
         }
 
         [BindProperty]
-        public Car Car { get; set; }
+        public Car Car { get; set; } = new Car();
 
-        // Stap van het formulier: 1 of 2
         [BindProperty]
         public int Step { get; set; } = 1;
 
         public void OnGet()
         {
-            // Begin bij stap 1
             Step = 1;
         }
 
         public IActionResult OnPostNext()
         {
-            // Ga van stap 1 naar stap 2
             Step = 2;
             return Page();
         }

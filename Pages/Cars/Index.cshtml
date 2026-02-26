@@ -24,13 +24,44 @@
                 <td>@car.Brand</td>
                 <td>@car.Model</td>
                 <td>€ @car.Price</td>
-                <td>@(car.IsSold ? "Verkocht" : "Te koop")</td>
+                <td>
+                    <button class="btn btn-sm @(car.IsSold ? "btn-success" : "btn-warning") toggle-status-btn"
+                            data-car-id="@car.Id">
+                        @(car.IsSold ? "Verkocht" : "Te koop")
+                    </button>
+                </td>
                 <td>
                     <form method="post" asp-page-handler="Delete" asp-route-id="@car.Id">
                         <button type="submit" class="btn btn-danger btn-sm">Verwijderen</button>
                     </form>
                 </td>
             </tr>
+        }
+        @section Scripts {
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    document.querySelectorAll(".toggle-status-btn").forEach(function (btn) {
+                        btn.addEventListener("click", function () {
+                            var carId = this.dataset.carId;
+                            var button = this;
+
+                            fetch("?handler=ToggleStatus&id=" + carId, {
+                                method: "POST",
+                                headers: {
+                                    "RequestVerificationToken": document.querySelector('input[name="__RequestVerificationToken"]').value
+                                }
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    button.textContent = data.isSold ? "Verkocht" : "Te koop";
+                                    button.className = "btn btn-sm " + (data.isSold ? "btn-success" : "btn-warning") + " toggle-status-btn";
+                                }
+                            });
+                        });
+                    });
+                });
+            </script>
         }
     </tbody>
 </table>

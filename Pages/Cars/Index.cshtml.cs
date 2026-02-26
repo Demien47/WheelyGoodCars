@@ -38,5 +38,17 @@ namespace WheelyGoodCars.Pages.Cars
 
             return RedirectToPage();
         }
+
+        public async Task<IActionResult> OnPostToggleStatusAsync(int id)
+        {
+            var car = await _context.Cars.FindAsync(id);
+            if (car == null) return NotFound();
+
+            car.IsSold = !car.IsSold;
+            await _context.SaveChangesAsync();
+
+            // Stuur JSON terug zodat JS kan updaten
+            return new JsonResult(new { success = true, isSold = car.IsSold });
+        }
     }
 }

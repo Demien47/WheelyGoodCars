@@ -21,7 +21,9 @@ public class Car
 
     public bool IsSold { get; set; }
 
-    public int Views { get; set; }
+    //public int Views { get; set; }
 
     public int UserId { get; set; } // Later voor login
+    public string? ImagePath { get; set; } // pad naar foto
+    public int Views { get; set; } = 0;   // aantal keer bekeken
 }

@@ -1,0 +1,34 @@
+﻿@page
+@model WheelyGoodCars.Pages.Cars.DetailsModel
+@{
+    ViewData["Title"] = "Auto details";
+}
+
+<h2>Auto details</h2>
+
+<div class="card mb-3" style="max-width: 800px;">
+    <div class="row g-0">
+        <div class="col-md-4">
+            @if (!string.IsNullOrEmpty(Model.Car.ImagePath))
+            {
+                <img src="@Model.Car.ImagePath" class="img-fluid" alt="Auto foto" />
+            }
+            else
+            {
+                <img src="/images/no-image.png" class="img-fluid" alt="Geen foto" />
+            }
+        </div>
+        <div class="col-md-8">
+            <div class="card-body">
+                <h5 class="card-title">@Model.Car.Brand @Model.Car.Model (@Model.Car.Year)</h5>
+                <p class="card-text"><strong>Kenteken:</strong> @Model.Car.LicensePlate</p>
+                <p class="card-text"><strong>Kilometerstand:</strong> @Model.Car.Mileage km</p>
+                <p class="card-text"><strong>Vraagprijs:</strong> € @Model.Car.Price</p>
+                <p class="card-text"><strong>Status:</strong> @(Model.Car.IsSold ? "Verkocht" : "Te koop")</p>
+                <p class="card-text"><strong>Bekeken:</strong> @Model.Car.Views keer</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<a asp-page="Index" class="btn btn-secondary">Terug naar overzicht</a>

@@ -6,7 +6,7 @@
 
 <h2>Nieuwe auto aanbieden</h2>
 
-<form method="post">
+<form method="post" enctype="multipart/form-data">
     <input type="hidden" asp-for="Step" />
 
     @if (Model.Step == 1)
@@ -56,11 +56,16 @@
             <input asp-for="Car.Price" type="number" step="0.01" class="form-control" />
             <span asp-validation-for="Car.Price" class="text-danger"></span>
         </div>
+        <div class="mb-3">
+            <label for="CarImage" class="form-label">Foto uploaden</label>
+            <input type="file" name="CarImage" class="form-control" />
+        </div>
 
         <button type="submit"
                 asp-page-handler="Save"
                 class="btn btn-success">
             Opslaan
         </button>
+        <div style="height: 120px;"></div>
     }
 </form>

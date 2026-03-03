@@ -1,0 +1,54 @@
+﻿@page
+@model WheelyGoodCars.Pages.Cars.EditModel
+
+<h2>Auto bewerken</h2>
+
+<form method="post">
+    <input type="hidden" asp-for="Car.Id" />
+    <input type="hidden" asp-for="Car.UserId" />
+    <input type="hidden" asp-for="Car.IsSold" />
+
+    <div class="mb-3">
+        <label asp-for="Car.LicensePlate" class="form-label"></label>
+        <input asp-for="Car.LicensePlate" class="form-control" />
+        <span asp-validation-for="Car.LicensePlate" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Car.Brand" class="form-label"></label>
+        <input asp-for="Car.Brand" class="form-control" />
+        <span asp-validation-for="Car.Brand" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Car.Model" class="form-label"></label>
+        <input asp-for="Car.Model" class="form-control" />
+        <span asp-validation-for="Car.Model" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Car.Year" class="form-label"></label>
+        <input asp-for="Car.Year" type="number" class="form-control" />
+        <span asp-validation-for="Car.Year" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Car.Mileage" class="form-label"></label>
+        <input asp-for="Car.Mileage" type="number" class="form-control" />
+        <span asp-validation-for="Car.Mileage" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Car.Price" class="form-label"></label>
+        <input asp-for="Car.Price" type="number" step="0.01" class="form-control" />
+        <span asp-validation-for="Car.Price" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-success">Opslaan</button>
+    <a asp-page="Index" class="btn btn-secondary">Annuleren</a>
+</form>
+<div style="height: 120px;"></div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

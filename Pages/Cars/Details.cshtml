@@ -1,4 +1,5 @@
 ﻿@page
+@using WheelyGoodCars.Models
 @model WheelyGoodCars.Pages.Cars.DetailsModel
 @{
     ViewData["Title"] = "Auto details";
@@ -30,5 +31,47 @@
         </div>
     </div>
 </div>
+
+@if (Model.Car.Views >= 10)
+{
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+
+        <div id="viewToast"
+             class="toast"
+             role="alert"
+             aria-live="assertive"
+             aria-atomic="true">
+
+            <div class="toast-header">
+                <strong class="me-auto">Populair!</strong>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="toast">
+                </button>
+            </div>
+
+            <div class="toast-body">
+                @Model.Car.Views klanten bekeken deze auto vandaag.
+            </div>
+
+        </div>
+    </div>
+
+    @section Scripts {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+
+                setTimeout(function () {
+
+                    var toastEl = document.getElementById('viewToast');
+                    var toast = new bootstrap.Toast(toastEl);
+                    toast.show();
+
+                }, 10000);
+
+            });
+        </script>
+    }
+}
 
 <a asp-page="Index" class="btn btn-secondary">Terug naar overzicht</a>

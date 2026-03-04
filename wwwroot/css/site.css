@@ -20,3 +20,19 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+.home-background {
+    background-image: url('/images/auto.jpg'); /* vervang met jouw afbeelding */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    height: 100vh; /* volledige schermhoogte */
+    width: 100%;
+}
+.home-text {
+    color: white; /* Witte tekst */
+    max-width: 800px; /* Maximum breedte */
+    margin: 0 auto; /* Centraal uitlijnen */
+    text-align: center; /* Tekst gecentreerd binnen de box */
+    padding: 20px;
+}

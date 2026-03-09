@@ -1,9 +1,10 @@
+using System.IO;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 using WheelyGoodCars.Data;
 using WheelyGoodCars.Models;
-using Microsoft.AspNetCore.Http;
-using System.IO;
 
 namespace WheelyGoodCars.Pages.Cars
 {
@@ -22,42 +23,52 @@ namespace WheelyGoodCars.Pages.Cars
         public Car Car { get; set; } = new Car();
 
         [BindProperty]
-        public IFormFile? CarImage { get; set; }  // Voor foto upload
+        public IFormFile? CarImage { get; set; }  // Foto upload
 
         [BindProperty]
         public int Step { get; set; } = 1;
 
-        public void OnGet()
+        [BindProperty]
+        public List<int> SelectedTags { get; set; } = new();
+
+        public List<Tag> AllTags { get; set; } = new();
+
+        // GET: start bij stap 1 en laad alle tags alvast
+        public async Task OnGetAsync()
         {
             Step = 1;
+            AllTags = await _context.Tags.ToListAsync();
         }
 
-        public IActionResult OnPostNext()
+        // POST: stap 1 ? stap 2
+        public async Task<IActionResult> OnPostNextAsync()
         {
             Step = 2;
+            AllTags = await _context.Tags.ToListAsync(); // belangrijk om tags te laden
             return Page();
         }
 
+        // POST: opslaan auto + foto + tags
         public async Task<IActionResult> OnPostSaveAsync()
         {
             if (!ModelState.IsValid)
             {
                 Step = 2;
+                AllTags = await _context.Tags.ToListAsync(); // opnieuw tags ophalen
                 return Page();
             }
 
             // Fake login
             Car.UserId = 1;
-            Car.Views = 0; // Start met 0 views
+            Car.Views = 0; // start met 0 views
 
-            // Foto upload
+            // FOTO UPLOAD
             if (CarImage != null)
             {
                 var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads");
                 if (!Directory.Exists(uploadsFolder))
                     Directory.CreateDirectory(uploadsFolder);
 
-                // Unieke bestandsnaam om conflicten te voorkomen
                 var fileName = Guid.NewGuid() + Path.GetExtension(CarImage.FileName);
                 var filePath = Path.Combine(uploadsFolder, fileName);
 
@@ -66,12 +77,26 @@ namespace WheelyGoodCars.Pages.Cars
                     await CarImage.CopyToAsync(stream);
                 }
 
-                // Relatief webpad opslaan in database
                 Car.ImagePath = "/uploads/" + fileName;
             }
 
+            // AUTO OPSLAAN
             _context.Cars.Add(Car);
             await _context.SaveChangesAsync();
+
+            // TAGS OPSLAAN
+            if (SelectedTags.Count > 0)
+            {
+                foreach (var tagId in SelectedTags)
+                {
+                    _context.CarTags.Add(new CarTag
+                    {
+                        CarId = Car.Id,
+                        TagId = tagId
+                    });
+                }
+                await _context.SaveChangesAsync();
+            }
 
             return RedirectToPage("Index");
         }

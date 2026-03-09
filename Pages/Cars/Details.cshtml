@@ -27,6 +27,17 @@
                 <p class="card-text"><strong>Vraagprijs:</strong> € @Model.Car.Price</p>
                 <p class="card-text"><strong>Status:</strong> @(Model.Car.IsSold ? "Verkocht" : "Te koop")</p>
                 <p class="card-text"><strong>Bekeken:</strong> @Model.Car.Views keer</p>
+
+                @if (Model.Tags != null && Model.Tags.Any())
+                {
+                    <p class="card-text mt-2">
+                        <strong>Tags:</strong>
+                        @foreach (var tag in Model.Tags)
+                        {
+                            <span class="badge bg-primary me-1">@tag.Name</span>
+                        }
+                    </p>
+                }
             </div>
         </div>
     </div>

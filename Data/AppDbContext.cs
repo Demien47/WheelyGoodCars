@@ -11,7 +11,6 @@ public class AppDbContext : DbContext
     public DbSet<Car> Cars { get; set; }
     public DbSet<Tag> Tags { get; set; }
     public DbSet<CarTag> CarTags { get; set; }
-
     public DbSet<CarView> CarViews { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

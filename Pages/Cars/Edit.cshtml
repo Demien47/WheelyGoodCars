@@ -43,14 +43,30 @@
         <input asp-for="Car.Price" type="number" step="0.01" class="form-control" />
         <span asp-validation-for="Car.Price" class="text-danger"></span>
     </div>
+
     <div class="mb-3">
         <label for="CarImage" class="form-label">Foto uploaden</label>
         <input type="file" name="CarImage" class="form-control" />
     </div>
 
-    <button type="submit" class="btn btn-success">Opslaan</button>
-    <a asp-page="Index" class="btn btn-secondary">Annuleren</a>
+    <!-- TAGS -->
+    <h5>Tags</h5>
+    @foreach (var tag in Model.AllTags)
+    {
+        <div class="form-check">
+            <input class="form-check-input"
+                   type="checkbox"
+                   value="@tag.Id"
+                   name="SelectedTags"
+                   @(Model.SelectedTags.Contains(tag.Id) ? "checked" : "") />
+            <label class="form-check-label">@tag.Name</label>
+        </div>
+    }
+
+    <button type="submit" class="btn btn-success mt-3">Opslaan</button>
+    <a asp-page="Index" class="btn btn-secondary mt-3">Annuleren</a>
 </form>
+
 <div style="height: 120px;"></div>
 
 @section Scripts {

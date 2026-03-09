@@ -21,7 +21,7 @@ public class Car
 
     public bool IsSold { get; set; }
 
-    //public int Views { get; set; }
+    public List<Tag> Tags { get; set; } = new();
 
     public int UserId { get; set; } // Later voor login
     public string? ImagePath { get; set; } // pad naar foto

@@ -1,7 +1,7 @@
 ﻿@page
 @model WheelyGoodCars.Pages.Cars.IndexModel
 
-<h1>Mijn Auto's</h1>
+<h1>Auto's</h1>
 
 <a asp-page="Create" class="btn btn-primary mb-3">Nieuwe auto</a>
 
@@ -12,6 +12,7 @@
             <th>Merk</th>
             <th>Model</th>
             <th>Prijs</th>
+            <th>Tags</th>
             <th>Status</th>
             <th>Acties</th>
         </tr>
@@ -25,49 +26,60 @@
                 <td>@car.Model</td>
                 <td>€ @car.Price</td>
                 <td>
+                    @if (car.Tags != null && car.Tags.Any())
+                    {
+                        foreach (var tag in car.Tags)
+                        {
+                            <span class="badge bg-primary me-1">@tag.Name</span>
+                        }
+                    }
+                </td>
+                <td>
                     <button class="btn btn-sm @(car.IsSold ? "btn-success" : "btn-warning") toggle-status-btn"
                             data-car-id="@car.Id">
                         @(car.IsSold ? "Verkocht" : "Te koop")
                     </button>
                 </td>
+
                 <td>
                     <a asp-page="Details" asp-route-id="@car.Id" class="btn btn-info btn-sm">
-                        Bekijken
+                        Details
                     </a>
                     <a asp-page="Edit" asp-route-id="@car.Id" class="btn btn-primary btn-sm">
                         Bewerken
                     </a>
-                    <form method="post" asp-page-handler="Delete" asp-route-id="@car.Id">
+                    <form method="post" asp-page-handler="Delete" asp-route-id="@car.Id" style="display:inline">
                         <button type="submit" class="btn btn-danger btn-sm">Verwijderen</button>
                     </form>
                 </td>
             </tr>
         }
-        @section Scripts {
-            <script>
-                document.addEventListener("DOMContentLoaded", function () {
-                    document.querySelectorAll(".toggle-status-btn").forEach(function (btn) {
-                        btn.addEventListener("click", function () {
-                            var carId = this.dataset.carId;
-                            var button = this;
-
-                            fetch("?handler=ToggleStatus&id=" + carId, {
-                                method: "POST",
-                                headers: {
-                                    "RequestVerificationToken": document.querySelector('input[name="__RequestVerificationToken"]').value
-                                }
-                            })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.success) {
-                                    button.textContent = data.isSold ? "Verkocht" : "Te koop";
-                                    button.className = "btn btn-sm " + (data.isSold ? "btn-success" : "btn-warning") + " toggle-status-btn";
-                                }
-                            });
-                        });
-                    });
-                });
-            </script>
-        }
     </tbody>
 </table>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll(".toggle-status-btn").forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    var carId = this.dataset.carId;
+                    var button = this;
+
+                    fetch("?handler=ToggleStatus&id=" + carId, {
+                        method: "POST",
+                        headers: {
+                            "RequestVerificationToken": document.querySelector('input[name="__RequestVerificationToken"]').value
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            button.textContent = data.isSold ? "Verkocht" : "Te koop";
+                            button.className = "btn btn-sm " + (data.isSold ? "btn-success" : "btn-warning") + " toggle-status-btn";
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+}

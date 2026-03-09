@@ -22,9 +22,32 @@ namespace WheelyGoodCars.Pages.Cars
             // Fake login user
             int currentUserId = 1;
 
-            Cars = await _context.Cars
+            var cars = await _context.Cars
                 .Where(c => c.UserId == currentUserId)
                 .ToListAsync();
+
+            if (cars.Count == 0)
+            {
+                Cars = cars;
+                return;
+            }
+
+            var carIds = cars.Select(c => c.Id).ToList();
+
+            var carTags = await _context.CarTags
+                .Where(ct => carIds.Contains(ct.CarId))
+                .Include(ct => ct.Tag)
+                .ToListAsync();
+
+            foreach (var car in cars)
+            {
+                car.Tags = carTags
+                    .Where(ct => ct.CarId == car.Id)
+                    .Select(ct => ct.Tag)
+                    .ToList();
+            }
+
+            Cars = cars;
         }
 
         public async Task<IActionResult> OnPostDeleteAsync(int id)

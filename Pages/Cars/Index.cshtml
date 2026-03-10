@@ -66,6 +66,28 @@
     </tbody>
 </table>
 
+@if (Model.TotalPages > 1)
+{
+    <nav aria-label="Page navigation" class="mb-3">
+        <ul class="pagination">
+            <li class="page-item @(Model.PageNumber == 1 ? "disabled" : "")">
+                <a class="page-link" asp-page="./Index" asp-route-pageNumber="@(Model.PageNumber - 1)" asp-route-tagId="@(Model.SelectedTagId)">Previous</a>
+            </li>
+
+            @for (int p = 1; p <= Model.TotalPages; p++)
+            {
+                <li class="page-item @(p == Model.PageNumber ? "active" : "")">
+                    <a class="page-link" asp-page="./Index" asp-route-pageNumber="@p" asp-route-tagId="@(Model.SelectedTagId)">@p</a>
+                </li>
+            }
+
+            <li class="page-item @(Model.PageNumber == Model.TotalPages ? "disabled" : "")">
+                <a class="page-link" asp-page="./Index" asp-route-pageNumber="@(Model.PageNumber + 1)" asp-route-tagId="@(Model.SelectedTagId)">Next</a>
+            </li>
+        </ul>
+    </nav>
+}
+
 @section Scripts {
     <script>
         document.addEventListener("DOMContentLoaded", function () {

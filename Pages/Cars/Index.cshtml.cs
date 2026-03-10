@@ -24,16 +24,22 @@ namespace WheelyGoodCars.Pages.Cars
         [FromQuery(Name = "tagId")]
         public int? SelectedTagId { get; set; }
 
+        // Pagination (bind from query ?pageNumber=1)
+        [FromQuery(Name = "pageNumber")]
+        public int PageNumber { get; set; } = 1;
+
+        public int PageSize { get; set; } = 6; // adjust as needed
+
+        public int TotalItems { get; set; }
+        public int TotalPages { get; set; }
+
         public async Task OnGetAsync()
         {
-            // Fake login user
-            int currentUserId = 1;
-
             // Load tags for the filter UI
             AllTags = await _context.Tags.OrderBy(t => t.Name).ToListAsync();
 
-            // Build base query
-            IQueryable<Car> carsQuery = _context.Cars.Where(c => c.UserId == currentUserId);
+            // Build base query for public offerings: available cars (not sold)
+            IQueryable<Car> carsQuery = _context.Cars.Where(c => !c.IsSold).OrderBy(c => c.Id);
 
             // If a tag is selected, restrict cars to those that have that tag
             if (SelectedTagId.HasValue)
@@ -45,7 +51,17 @@ namespace WheelyGoodCars.Pages.Cars
                 carsQuery = carsQuery.Where(c => carIdsWithTag.Contains(c.Id));
             }
 
-            var cars = await carsQuery.ToListAsync();
+            // total count for pagination
+            TotalItems = await carsQuery.CountAsync();
+            TotalPages = (int)Math.Ceiling(TotalItems / (double)PageSize);
+            if (PageNumber < 1) PageNumber = 1;
+            if (PageNumber > TotalPages && TotalPages > 0) PageNumber = TotalPages;
+
+            // fetch page
+            var cars = await carsQuery
+                .Skip((PageNumber - 1) * PageSize)
+                .Take(PageSize)
+                .ToListAsync();
 
             if (cars.Count == 0)
             {

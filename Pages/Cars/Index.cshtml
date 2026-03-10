@@ -57,7 +57,12 @@
                     <a asp-page="Edit" asp-route-id="@car.Id" class="btn btn-primary btn-sm">
                         Bewerken
                     </a>
-                    <form method="post" asp-page-handler="Delete" asp-route-id="@car.Id" style="display:inline">
+                    <form method="post"
+                          asp-page-handler="Delete"
+                          asp-route-id="@car.Id"
+                          class="delete-form"
+                          style="display:inline"
+                          onsubmit="return confirm('Weet je zeker dat je deze auto wilt verwijderen?');">
                         <button type="submit" class="btn btn-danger btn-sm">Verwijderen</button>
                     </form>
                 </td>

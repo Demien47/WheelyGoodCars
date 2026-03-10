@@ -17,7 +17,7 @@ namespace WheelyGoodCars.Pages.Cars
 
         public Car Car { get; set; }
 
-        // Separate list for display — do not assign into the tracked Car navigation
+        // Separate list for display – do not assign into the tracked Car navigation
         public List<Tag> Tags { get; set; } = new();
 
         public async Task<IActionResult> OnGetAsync(int id)
@@ -33,8 +33,16 @@ namespace WheelyGoodCars.Pages.Cars
                 .Select(ct => ct.Tag)
                 .ToListAsync();
 
-            // Increase views on the tracked entity and save
+            // Increase views on the tracked entity
             Car.Views += 1;
+
+            // Log a row into CarViews so "views today" can be calculated reliably
+            _context.CarViews.Add(new CarView
+            {
+                CarId = id,
+                ViewedAt = DateTime.Now
+            });
+
             await _context.SaveChangesAsync();
 
             return Page();

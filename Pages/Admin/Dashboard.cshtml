@@ -1,0 +1,234 @@
+@page
+@model WheelyGoodCars.Pages.Admin.DashboardModel
+@{
+    ViewData["Title"] = "Beheer Dashboard";
+}
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+<style>
+    /* Fullscreen friendly layout */
+    .dashboard-root {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        padding: 1rem;
+    }
+
+    .dashboard-top {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .stat-card {
+        flex: 1;
+    }
+
+    .charts-row {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+        flex: 1;
+        min-height: 0;
+    }
+
+    .chart-card {
+        flex: 1;
+        padding: 1rem;
+        background: #fff;
+        border-radius: .375rem;
+        box-shadow: 0 .125rem .25rem rgba(0,0,0,.03);
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .chart-card canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .controls {
+        margin-left: auto;
+        display:flex;
+        gap:.5rem;
+        align-items:center;
+    }
+
+    body.fullscreen .dashboard-root {
+        padding: 0;
+    }
+</style>
+
+<div class="dashboard-root bg-light">
+    <div class="d-flex align-items-start">
+        <h2>Beheer Dashboard</h2>
+        <div class="controls ms-3">
+            <button id="fullscreenBtn" class="btn btn-outline-secondary btn-sm">Toggle Fullscreen</button>
+            <small class="text-muted ms-2" id="lastUpdated">--</small>
+        </div>
+    </div>
+
+    <div class="dashboard-top mt-3">
+        <div class="stat-card card p-3">
+            <h5>Aantal auto's aangeboden</h5>
+            <div class="d-flex align-items-center">
+                <h3 id="offeredCount" class="me-3">0</h3>
+                <div class="w-100">
+                    <div class="progress">
+                        <div id="offeredProgress" class="progress-bar" role="progressbar" style="width:0%">0%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card card p-3">
+            <h5>Aantal verkocht</h5>
+            <h3 id="soldCount">0</h3>
+            <div class="progress mt-2">
+                <div id="soldProgress" class="progress-bar bg-success" role="progressbar" style="width:0%">0%</div>
+            </div>
+        </div>
+
+        <div class="stat-card card p-3">
+            <h5>Aantal vandaag aangeboden</h5>
+            <h3 id="offeredToday">0</h3>
+            <div class="progress mt-2">
+                <div id="todayProgress" class="progress-bar bg-info" role="progressbar" style="width:0%">0%</div>
+            </div>
+        </div>
+
+        <div class="stat-card card p-3">
+            <h5>Aantal aanbieders</h5>
+            <h3 id="providers">0</h3>
+            <div class="mt-2 text-muted">Gem. auto's per aanbieder: <span id="avgCars">0</span></div>
+        </div>
+
+        <div class="stat-card card p-3">
+            <h5>Aantal views vandaag</h5>
+            <h3 id="viewsToday">0</h3>
+        </div>
+    </div>
+
+    <div class="charts-row">
+        <div class="chart-card">
+            <h6>Views (laatste 7 dagen)</h6>
+            <canvas id="viewsChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <h6>Nieuw aanbod (laatste 7 dagen)</h6>
+            <canvas id="addedChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <h6>Aanbod vs Verkocht</h6>
+            <canvas id="pieChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div style="height: 50px;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    (() => {
+        const refreshInterval = 10000; // 10s
+        let viewsChart, addedChart, pieChart;
+
+        function initCharts() {
+            const ctxV = document.getElementById('viewsChart').getContext('2d');
+            viewsChart = new Chart(ctxV, {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'Views', data: [], borderColor: '#0d6efd', backgroundColor: 'rgba(13,110,253,0.1)', fill: true }] },
+                options: { maintainAspectRatio: false, scales: { x: { ticks: { maxRotation: 0 } } } }
+            });
+
+            const ctxA = document.getElementById('addedChart').getContext('2d');
+            addedChart = new Chart(ctxA, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Nieuw aanbod', data: [], backgroundColor: '#20c997' }] },
+                options: { maintainAspectRatio: false }
+            });
+
+            const ctxP = document.getElementById('pieChart').getContext('2d');
+            pieChart = new Chart(ctxP, {
+                type: 'doughnut',
+                data: { labels: ['Aanbod', 'Verkocht'], datasets: [{ data: [0, 0], backgroundColor: ['#0d6efd', '#198754'] }] },
+                options: { maintainAspectRatio: false }
+            });
+        }
+
+        function updateProgress(idValue, idBar, value, max) {
+            const elVal = document.getElementById(idValue);
+            const elBar = document.getElementById(idBar);
+            elVal.textContent = value;
+            const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+            elBar.style.width = pct + '%';
+            elBar.textContent = pct + '%';
+        }
+
+        async function fetchAndUpdate() {
+            const res = await fetch('?handler=Stats');
+            if (!res.ok) return;
+            const data = await res.json();
+
+            // Update top stats
+            document.getElementById('offeredCount').textContent = data.offeredCount;
+            document.getElementById('soldCount').textContent = data.soldCount;
+            document.getElementById('offeredToday').textContent = data.offeredToday;
+            document.getElementById('providers').textContent = data.providers;
+            document.getElementById('avgCars').textContent = data.avgCarsPerProvider;
+            document.getElementById('viewsToday').textContent = data.viewsToday;
+
+            const maxForProgress = Math.max(data.offeredCount + data.soldCount, 1);
+            updateProgress('offeredCount', 'offeredProgress', data.offeredCount, maxForProgress);
+            updateProgress('soldCount', 'soldProgress', data.soldCount, maxForProgress);
+            updateProgress('offeredToday', 'todayProgress', data.offeredToday, Math.max(50, data.offeredToday)); // arbitrary scale
+
+            // Update charts
+            const viewsLabels = data.viewsLast7.map(x => x.date);
+            const viewsData = data.viewsLast7.map(x => x.count);
+            viewsChart.data.labels = viewsLabels;
+            viewsChart.data.datasets[0].data = viewsData;
+            viewsChart.update();
+
+            const addedLabels = data.carsAddedLast7.map(x => x.date);
+            const addedData = data.carsAddedLast7.map(x => x.count);
+            addedChart.data.labels = addedLabels;
+            addedChart.data.datasets[0].data = addedData;
+            addedChart.update();
+
+            pieChart.data.datasets[0].data = [data.offeredCount, data.soldCount];
+            pieChart.update();
+
+            document.getElementById('lastUpdated').textContent = 'Updated: ' + new Date().toLocaleTimeString();
+        }
+
+        function setupFullscreen() {
+            const btn = document.getElementById('fullscreenBtn');
+            btn.addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen?.();
+                } else {
+                    document.exitFullscreen?.();
+                }
+            });
+
+            document.addEventListener('fullscreenchange', () => {
+                if (document.fullscreenElement) {
+                    document.body.classList.add('fullscreen');
+                } else {
+                    document.body.classList.remove('fullscreen');
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            setupFullscreen();
+            fetchAndUpdate();
+            setInterval(fetchAndUpdate, refreshInterval);
+        });
+    })();
+</script>

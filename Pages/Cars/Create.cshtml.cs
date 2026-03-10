@@ -62,6 +62,9 @@ namespace WheelyGoodCars.Pages.Cars
             Car.UserId = 1;
             Car.Views = 0; // start met 0 views
 
+            // Set created timestamp (new property)
+            Car.CreatedAt = DateTime.Now;
+
             // FOTO UPLOAD
             if (CarImage != null)
             {

@@ -26,4 +26,7 @@ public class Car
     public int UserId { get; set; } // Later voor login
     public string? ImagePath { get; set; } // pad naar foto
     public int Views { get; set; } = 0;   // aantal keer bekeken
+
+    // New: timestamp when car was offered
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
 }

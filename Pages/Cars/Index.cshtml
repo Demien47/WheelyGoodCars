@@ -5,6 +5,15 @@
 
 <a asp-page="Create" class="btn btn-primary mb-3">Nieuwe auto</a>
 
+<div class="mb-3">
+    <span class="me-2"><strong>Filter op tag:</strong></span>
+    <a asp-page="./Index" class="btn btn-sm @(Model.SelectedTagId == null ? "btn-primary" : "btn-outline-primary") me-1">Alle</a>
+    @foreach (var tag in Model.AllTags)
+    {
+        <a asp-page="./Index" asp-route-tagId="@tag.Id" class="btn btn-sm @(Model.SelectedTagId == tag.Id ? "btn-primary" : "btn-outline-primary") me-1">@tag.Name</a>
+    }
+</div>
+
 <table class="table table-bordered">
     <thead>
         <tr>

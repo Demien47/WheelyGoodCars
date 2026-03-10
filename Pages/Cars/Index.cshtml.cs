@@ -17,14 +17,35 @@ namespace WheelyGoodCars.Pages.Cars
 
         public List<Car> Cars { get; set; }
 
+        // All tags for the filter UI
+        public List<Tag> AllTags { get; set; } = new();
+
+        // Optional selected tag from query string: ?tagId=1
+        [FromQuery(Name = "tagId")]
+        public int? SelectedTagId { get; set; }
+
         public async Task OnGetAsync()
         {
             // Fake login user
             int currentUserId = 1;
 
-            var cars = await _context.Cars
-                .Where(c => c.UserId == currentUserId)
-                .ToListAsync();
+            // Load tags for the filter UI
+            AllTags = await _context.Tags.OrderBy(t => t.Name).ToListAsync();
+
+            // Build base query
+            IQueryable<Car> carsQuery = _context.Cars.Where(c => c.UserId == currentUserId);
+
+            // If a tag is selected, restrict cars to those that have that tag
+            if (SelectedTagId.HasValue)
+            {
+                var carIdsWithTag = _context.CarTags
+                    .Where(ct => ct.TagId == SelectedTagId.Value)
+                    .Select(ct => ct.CarId);
+
+                carsQuery = carsQuery.Where(c => carIdsWithTag.Contains(c.Id));
+            }
+
+            var cars = await carsQuery.ToListAsync();
 
             if (cars.Count == 0)
             {

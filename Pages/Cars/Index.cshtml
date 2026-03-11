@@ -5,7 +5,11 @@
 
 <a asp-page="Create" class="btn btn-primary mb-3">Nieuwe auto</a>
 
+<!-- antiforgery token for AJAX POSTs (toggle status) -->
+<form id="antiForgeryForm" asp-antiforgery="true" style="display:none"></form>
+
 <div class="mb-3">
+    <input id="searchInput" type="text" class="form-control mb-2" placeholder="Zoek merk of model"/>
     <span class="me-2"><strong>Filter op tag:</strong></span>
     <a asp-page="./Index" class="btn btn-sm @(Model.SelectedTagId == null ? "btn-primary" : "btn-outline-primary") me-1">Alle</a>
     @foreach (var tag in Model.AllTags)
@@ -26,7 +30,7 @@
             <th>Acties</th>
         </tr>
     </thead>
-    <tbody>
+    <tbody id="carsTbody">
         @foreach (var car in Model.Cars)
         {
             <tr>
@@ -73,7 +77,7 @@
 
 @if (Model.TotalPages > 1)
 {
-    <nav aria-label="Page navigation" class="mb-3">
+    <nav aria-label="Page navigation" class="mb-3" id="paginationNav">
         <ul class="pagination">
             <li class="page-item @(Model.PageNumber == 1 ? "disabled" : "")">
                 <a class="page-link" asp-page="./Index" asp-route-pageNumber="@(Model.PageNumber - 1)" asp-route-tagId="@(Model.SelectedTagId)">Previous</a>
@@ -96,26 +100,182 @@
 @section Scripts {
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            document.querySelectorAll(".toggle-status-btn").forEach(function (btn) {
-                btn.addEventListener("click", function () {
-                    var carId = this.dataset.carId;
-                    var button = this;
+            // store original tbody so clearing search restores it
+            const tbody = document.getElementById('carsTbody');
+            const originalTbodyHtml = tbody.innerHTML;
+            const paginationNav = document.getElementById('paginationNav');
+            const originalPaginationHtml = paginationNav ? paginationNav.innerHTML : '';
 
-                    fetch("?handler=ToggleStatus&id=" + carId, {
-                        method: "POST",
-                        headers: {
-                            "RequestVerificationToken": document.querySelector('input[name="__RequestVerificationToken"]').value
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            button.textContent = data.isSold ? "Verkocht" : "Te koop";
-                            button.className = "btn btn-sm " + (data.isSold ? "btn-success" : "btn-warning") + " toggle-status-btn";
+            function getAntiforgeryToken() {
+                const el = document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]');
+                return el ? el.value : '';
+            }
+
+            // Attach handlers to current DOM rows (toggle + delete)
+            function attachRowHandlers(root = document) {
+                root.querySelectorAll('.delete-form').forEach(function (form) {
+                    form.addEventListener('submit', function (e) {
+                        if (!confirm('Weet je zeker dat je deze auto wilt verwijderen?')) {
+                            e.preventDefault();
                         }
                     });
                 });
-            });
+
+                root.querySelectorAll(".toggle-status-btn").forEach(function (btn) {
+                    // remove previous listener by cloning node to avoid double handlers
+                    const newBtn = btn.cloneNode(true);
+                    btn.parentNode.replaceChild(newBtn, btn);
+
+                    newBtn.addEventListener("click", function () {
+                        var carId = this.dataset.carId;
+                        var button = this;
+                        var token = getAntiforgeryToken();
+
+                        fetch("?handler=ToggleStatus&id=" + carId, {
+                            method: "POST",
+                            headers: {
+                                "RequestVerificationToken": token,
+                                "Content-Type": "application/x-www-form-urlencoded"
+                            }
+                        })
+                        .then(response => {
+                            if (!response.ok) throw new Error('Network response was not ok');
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                // If the index shows only available cars, a car that is now sold should be removed from the list
+                                if (data.isSold) {
+                                    var row = button.closest('tr');
+                                    if (row) row.remove();
+                                    return;
+                                }
+
+                                button.textContent = data.isSold ? "Verkocht" : "Te koop";
+                                button.classList.remove("btn-success", "btn-warning");
+                                button.classList.add(data.isSold ? "btn-success" : "btn-warning");
+                            } else {
+                                alert('Status wisselen is mislukt.');
+                            }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            alert('Er is iets misgegaan bij het wijzigen van de status.');
+                        });
+                    });
+                });
+            }
+
+            attachRowHandlers();
+
+            // Debounce helper
+            function debounce(fn, delay) {
+                let t = null;
+                return function (...args) {
+                    clearTimeout(t);
+                    t = setTimeout(() => fn.apply(this, args), delay);
+                };
+            }
+
+            // Render pagination for search results
+            function renderSearchPagination(totalPages, currentPage) {
+                if (!paginationNav) return;
+                if (totalPages <= 1) {
+                    paginationNav.style.display = 'none';
+                    return;
+                }
+
+                let html = '<ul class="pagination">';
+                html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}"><a href="#" class="page-link search-page-link" data-page="${currentPage - 1}">Previous</a></li>`;
+
+                for (let p = 1; p <= totalPages; p++) {
+                    html += `<li class="page-item ${p === currentPage ? 'active' : ''}"><a href="#" class="page-link search-page-link" data-page="${p}">${p}</a></li>`;
+                }
+
+                html += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}"><a href="#" class="page-link search-page-link" data-page="${currentPage + 1}">Next</a></li>`;
+                html += '</ul>';
+                paginationNav.innerHTML = html;
+                paginationNav.style.display = '';
+
+                // attach click handlers
+                paginationNav.querySelectorAll('.search-page-link').forEach(function (link) {
+                    link.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        const p = parseInt(this.dataset.page, 10);
+                        if (!isNaN(p) && p >= 1) {
+                            doSearch(document.getElementById('searchInput').value, p);
+                        }
+                    });
+                });
+            }
+
+            async function doSearch(q, pageNumber = 1) {
+                q = (q || '').trim();
+                if (!q) {
+                    // restore original
+                    tbody.innerHTML = originalTbodyHtml;
+                    attachRowHandlers();
+                    if (paginationNav) {
+                        paginationNav.innerHTML = originalPaginationHtml;
+                        paginationNav.style.display = originalPaginationHtml ? '' : 'none';
+                    }
+                    return;
+                }
+
+                try {
+                    // include selected tag if present in query string to match server filtering
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const tagId = urlParams.get('tagId');
+                    let url = `?handler=Search&q=${encodeURIComponent(q)}&pageNumber=${pageNumber}&pageSize=@Model.PageSize`;
+                    if (tagId) url += `&tagId=${encodeURIComponent(tagId)}`;
+
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error('Search request failed');
+                    const data = await res.json();
+                    const results = data.results || [];
+
+                    // render rows
+                    const rowsHtml = results.map(car => {
+                        const tagsHtml = (car.tags || []).map(t => `<span class="badge bg-primary me-1">${t}</span>`).join('');
+                        const statusBtnClass = car.isSold ? 'btn-success' : 'btn-warning';
+                        const statusText = car.isSold ? 'Verkocht' : 'Te koop';
+
+                        // delete form posts back to this page handler - keep inline onsubmit confirm as backup
+                        return `<tr>
+                                    <td>${car.licensePlate}</td>
+                                    <td>${car.brand}</td>
+                                    <td>${car.model}</td>
+                                    <td>€ ${car.price}</td>
+                                    <td>${tagsHtml}</td>
+                                    <td>
+                                        <button class="btn btn-sm ${statusBtnClass} toggle-status-btn" data-car-id="${car.id}">${statusText}</button>
+                                    </td>
+                                    <td>
+                                        <a href="Details?id=${car.id}" class="btn btn-info btn-sm">Details</a>
+                                        <a href="Edit?id=${car.id}" class="btn btn-primary btn-sm">Bewerken</a>
+                                        <form method="post" action="?handler=Delete&id=${car.id}" class="delete-form" style="display:inline" onsubmit="return confirm('Weet je zeker dat je deze auto wilt verwijderen?');">
+                                            <button type="submit" class="btn btn-danger btn-sm">Verwijderen</button>
+                                        </form>
+                                    </td>
+                                </tr>`;
+                    }).join('');
+
+                    tbody.innerHTML = rowsHtml;
+                    attachRowHandlers();
+
+                    // render pagination from response
+                    renderSearchPagination(data.totalPages || 0, data.pageNumber || 1);
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+
+            const debouncedSearch = debounce(function (e) {
+                doSearch(e.target.value, 1);
+            }, 300);
+
+            const input = document.getElementById('searchInput');
+            input.addEventListener('input', debouncedSearch);
         });
     </script>
 }

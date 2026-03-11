@@ -28,7 +28,7 @@ namespace WheelyGoodCars.Pages.Cars
         [FromQuery(Name = "pageNumber")]
         public int PageNumber { get; set; } = 1;
 
-        public int PageSize { get; set; } = 6; // adjust as needed
+        public int PageSize { get; set; } = 5; // adjust as needed
 
         public int TotalItems { get; set; }
         public int TotalPages { get; set; }
@@ -109,6 +109,68 @@ namespace WheelyGoodCars.Pages.Cars
 
             // Stuur JSON terug zodat JS kan updaten
             return new JsonResult(new { success = true, isSold = car.IsSold });
+        }
+
+        // Live search handler used by AJAX (no page reload) — returns paged results
+        public async Task<IActionResult> OnGetSearchAsync([FromQuery] string q, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 6, [FromQuery(Name = "tagId")] int? tagId = null)
+        {
+            if (string.IsNullOrWhiteSpace(q))
+            {
+                return new JsonResult(new { results = Array.Empty<object>(), totalItems = 0, totalPages = 0, pageNumber = 1 });
+            }
+
+            var term = q.Trim();
+            var pattern = $"%{term}%";
+
+            // base query — only available cars (match Index behaviour)
+            IQueryable<Car> carsQuery = _context.Cars.Where(c => !c.IsSold &&
+                (EF.Functions.Like(c.Brand ?? "", pattern) || EF.Functions.Like(c.Model ?? "", pattern)));
+
+            if (tagId.HasValue)
+            {
+                var carIdsWithTag = _context.CarTags
+                    .Where(ct => ct.TagId == tagId.Value)
+                    .Select(ct => ct.CarId);
+
+                carsQuery = carsQuery.Where(c => carIdsWithTag.Contains(c.Id));
+            }
+
+            var totalItems = await carsQuery.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageNumber > totalPages && totalPages > 0) pageNumber = totalPages;
+
+            var matched = await carsQuery
+                .OrderBy(c => c.Id)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var carIds = matched.Select(c => c.Id).ToList();
+
+            var carTags = await _context.CarTags
+                .Where(ct => carIds.Contains(ct.CarId))
+                .Include(ct => ct.Tag)
+                .ToListAsync();
+
+            var results = matched.Select(c => new
+            {
+                c.Id,
+                c.LicensePlate,
+                Brand = c.Brand ?? string.Empty,
+                Model = c.Model ?? string.Empty,
+                Price = c.Price,
+                IsSold = c.IsSold,
+                Tags = carTags.Where(ct => ct.CarId == c.Id).Select(ct => ct.Tag.Name).ToArray()
+            }).ToArray();
+
+            return new JsonResult(new
+            {
+                results,
+                totalItems,
+                totalPages,
+                pageNumber
+            });
         }
     }
 }

@@ -112,7 +112,11 @@ namespace WheelyGoodCars.Pages.Cars
         }
 
         // Live search handler used by AJAX (no page reload) — returns paged results
-        public async Task<IActionResult> OnGetSearchAsync([FromQuery] string q, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 6, [FromQuery(Name = "tagId")] int? tagId = null)
+        public async Task<IActionResult> OnGetSearchAsync(
+            [FromQuery] string q,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 6,
+            [FromQuery(Name = "tagId")] int? tagId = null)
         {
             if (string.IsNullOrWhiteSpace(q))
             {

@@ -7,6 +7,8 @@ using iText.Kernel.Pdf;
 using iText.Layout;
 using iText.Layout.Element;
 using System.IO;
+using iText.IO.Image;
+using iText.Layout.Element;
 
 namespace WheelyGoodCars.Pages.Cars
 {

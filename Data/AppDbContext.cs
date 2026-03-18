@@ -12,6 +12,7 @@ public class AppDbContext : DbContext
     public DbSet<Tag> Tags { get; set; }
     public DbSet<CarTag> CarTags { get; set; }
     public DbSet<CarView> CarViews { get; set; }
+    public DbSet<User> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

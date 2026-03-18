@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using WheelyGoodCars;
 using WheelyGoodCars.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,5 +30,11 @@ app.UseRouting();
 app.UseAuthorization();
 
 app.MapRazorPages();
+
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    DbSeeder.Seed(context);
+}
 
 app.Run();
